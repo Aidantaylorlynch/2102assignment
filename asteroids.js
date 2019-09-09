@@ -32,6 +32,19 @@ function asteroids() {
             console.log(moveY);
             this.x += moveX;
             this.y += moveY;
+            if (this.x < 0) {
+                this.x += 600;
+            }
+            if (this.x > 600) {
+                this.x = 0;
+            }
+            if (this.y < 0) {
+                this.y += 600;
+            }
+            if (this.x > 600) {
+                this.y = 0;
+            }
+            console.log(this.shippyboy);
             this.setPossy();
         }
         setRotate(newRot) {
@@ -40,6 +53,10 @@ function asteroids() {
         }
     }
     const svg = document.getElementById("canvas");
+    let leftPaddle = new Elem(svg, "rect")
+        .attr("width", 3)
+        .attr("height", 120)
+        .attr("fill", "#FFFFFF");
     let g = new Elem(svg, 'g')
         .attr("transform", "translate(300 300) rotate(180)");
     let ship = new Elem(svg, 'polygon', g.elem)
@@ -54,10 +71,10 @@ function asteroids() {
         if (keyCode == "ArrowRight") {
             shippyBoy.setRotate(20);
         }
-        else if (keyCode == "ArrowLeft") {
+        if (keyCode == "ArrowLeft") {
             shippyBoy.setRotate(-20);
         }
-        else if (keyCode == "ArrowUp") {
+        if (keyCode == "ArrowUp") {
             shippyBoy.move();
         }
     });

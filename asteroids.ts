@@ -35,11 +35,25 @@ function asteroids() {
       const adjx = Math.sin(this.toRadians(adjrot))
       const adjy = Math.cos(this.toRadians(adjrot))
       const moveX = 10 * adjx;
+      // time y by -1 because its backwards
       const moveY = -1 * 10 * adjy
       console.log(moveX)
       console.log(moveY)
       this.x += moveX;
       this.y += moveY;
+      if (this.x < 0) {
+        this.x += 600;
+      }
+      if (this.x > 600) {
+        this.x = 0;
+      }
+      if (this.y < 0) {
+        this.y += 600;
+      }
+      if (this.x > 600) {
+        this.y = 0;
+      }
+      console.log(this.shippyboy)
       this.setPossy();
     }
 
@@ -60,7 +74,13 @@ function asteroids() {
   // create reusable, generic functions.
   const svg = document.getElementById("canvas")!;
   // make a group for the spaceship and a transform to move it and rotate it
-  // to animate the spaceship you will update the transform property
+  // to animate the spaceship you will update the transform property 
+
+  let leftPaddle: Elem = new Elem(svg, "rect")
+    .attr("width", 3)
+    .attr("height", 120)
+    .attr("fill", "#FFFFFF");
+
   let g = new Elem(svg,'g')
     .attr("transform","translate(300 300) rotate(180)")  
   
@@ -78,9 +98,11 @@ function asteroids() {
     .subscribe((keyCode) => {
       if(keyCode == "ArrowRight") {
         shippyBoy.setRotate(20);
-      } else if (keyCode == "ArrowLeft") {
+      } 
+      if (keyCode == "ArrowLeft") {
         shippyBoy.setRotate(-20);
-      } else if (keyCode == "ArrowUp") {
+      }
+      if (keyCode == "ArrowUp") {
         shippyBoy.move();
       }
     });
