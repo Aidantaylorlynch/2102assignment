@@ -2,6 +2,7 @@
 // https://docs.google.com/document/d/1Gr-M6LTU-tfm4yabqZWJYg-zTjEVqHKKTCvePGCYsUA/edit?usp=sharing
 
 function asteroids() {
+  const gameLoop = Observable.interval(16.7);
 
   class Shippyboy {
     shippyboy: Elem;
@@ -76,11 +77,6 @@ function asteroids() {
   // make a group for the spaceship and a transform to move it and rotate it
   // to animate the spaceship you will update the transform property 
 
-  let leftPaddle: Elem = new Elem(svg, "rect")
-    .attr("width", 3)
-    .attr("height", 120)
-    .attr("fill", "#FFFFFF");
-
   let g = new Elem(svg,'g')
     .attr("transform","translate(300 300) rotate(180)")  
   
@@ -88,7 +84,7 @@ function asteroids() {
   let ship = new Elem(svg, 'polygon', g.elem) 
     .attr("points","-15,20 15,20 0,-20")
     .attr("style","fill:lime;stroke:purple;stroke-width:1")
-  
+
   const shippyBoy = new Shippyboy(g);
 
   Observable.fromEvent<KeyboardEvent>(document, 'keydown')
@@ -103,9 +99,15 @@ function asteroids() {
         shippyBoy.setRotate(-20);
       }
       if (keyCode == "ArrowUp") {
-        shippyBoy.move();
+        // shippyBoy.move();
       }
     });
+
+  gameLoop.subscribe((frame: number) => {
+    console.log("tick", frame);
+    shippyBoy.move();
+  });
+
 }
 
 // the following simply runs your asteroids function on window load.  Make sure to leave it in place.

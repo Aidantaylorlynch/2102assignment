@@ -1,5 +1,6 @@
 "use strict";
 function asteroids() {
+    const gameLoop = Observable.interval(16.7);
     class Shippyboy {
         constructor(ship) {
             this.rotate = 0;
@@ -53,10 +54,6 @@ function asteroids() {
         }
     }
     const svg = document.getElementById("canvas");
-    let leftPaddle = new Elem(svg, "rect")
-        .attr("width", 3)
-        .attr("height", 120)
-        .attr("fill", "#FFFFFF");
     let g = new Elem(svg, 'g')
         .attr("transform", "translate(300 300) rotate(180)");
     let ship = new Elem(svg, 'polygon', g.elem)
@@ -75,8 +72,11 @@ function asteroids() {
             shippyBoy.setRotate(-20);
         }
         if (keyCode == "ArrowUp") {
-            shippyBoy.move();
         }
+    });
+    gameLoop.subscribe((frame) => {
+        console.log("tick", frame);
+        shippyBoy.move();
     });
 }
 if (typeof window != 'undefined')
