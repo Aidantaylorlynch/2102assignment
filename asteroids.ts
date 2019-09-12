@@ -3,20 +3,26 @@
 
 function asteroids() {
   const gameLoop = Observable.interval(16.7);
+  const keyDownEvents = Observable.fromEvent<KeyboardEvent>(document, 'keydown');
+  const keyUpEvents = Observable.fromEvent<KeyboardEvent>(document, 'keyup');
 
   class Shippyboy {
     shippyboy: Elem;
     rotate: number = 0;
     x: number = 300;
     y: number = 300;
+    velocity: number = 0;
+    leftKeyDown: boolean = false;
+    rightKeyDown: boolean = false;
+    forwardKeyDown: boolean = false;
 
     constructor(ship: Elem) {
       this.shippyboy = ship;
     }
 
-    setPossy() {
-      const possy = "translate(" + this.x + " " + this.y + ") " + "rotate(" + this.rotate + ")";
-      this.shippyboy.attr("transform", possy.toString());
+    updateSVGAttributes() {
+      const transform = "translate(" + this.x + " " + this.y + ") " + "rotate(" + this.rotate + ")";
+      this.shippyboy.attr("transform", transform.toString());
     }
 
     toRadians(angle: number) {
@@ -24,24 +30,24 @@ function asteroids() {
     }
 
     move() {
-      console.log("current rotation", this.rotate)
-      console.log("current rotation mod", this.rotate % 360)
-      console.log("current x", this.x)
-      console.log("current y", this.y)
-      console.log("x rad", this.toRadians(this.x))
-      console.log("y rad", this.toRadians(this.y))
+      // console.log("current rotation", this.rotate)
+      // console.log("current rotation mod", this.rotate % 360)
+      // console.log("current x", this.x)
+      // console.log("current y", this.y)
+      // console.log("x rad", this.toRadians(this.x))
+      // console.log("y rad", this.toRadians(this.y))
       const adjrot = this.rotate % 360;
-      console.log("sin", Math.sin(this.toRadians(adjrot)))
-      console.log("cos", Math.cos(this.toRadians(adjrot)))
+      // console.log("sin", Math.sin(this.toRadians(adjrot)))
+      // console.log("cos", Math.cos(this.toRadians(adjrot)))
       const adjx = Math.sin(this.toRadians(adjrot))
       const adjy = Math.cos(this.toRadians(adjrot))
       const moveX = 10 * adjx;
       // time y by -1 because its backwards
-      const moveY = -1 * 10 * adjy
-      console.log(moveX)
-      console.log(moveY)
-      this.x += moveX;
-      this.y += moveY;
+      const moveY = -1 * 10 * adjy;
+      // console.log(moveX)
+      // console.log(moveY)
+      this.x += moveX * this.velocity;
+      this.y += moveY * this.velocity;
       if (this.x < 0) {
         this.x += 600;
       }
@@ -54,13 +60,66 @@ function asteroids() {
       if (this.x > 600) {
         this.y = 0;
       }
-      console.log(this.shippyboy)
-      this.setPossy();
+      this.updateSVGAttributes();
     }
 
-    setRotate(newRot: number) {
+    setRotation(newRot: number) {
       this.rotate = this.rotate + newRot;
-      this.setPossy();
+      this.updateSVGAttributes();
+    }
+
+    rotateLeft() {
+      this.setRotation(-5);
+    }
+
+    rotateRight() {
+      this.setRotation(5);
+    }
+
+    increaseVelocity() {
+      if (this.velocity < 1) {
+        this.velocity += 0.1;
+      }
+    }
+
+    slowlyDecreaseVelocity() {
+      if (this.velocity > 0) {
+        this.velocity -= 0.01;
+      }
+    }
+
+    setKeyDown(key: string) {
+      if (key === "left") {
+        this.leftKeyDown = true;
+      } else if (key === "right") {
+        this.rightKeyDown = true;
+      } else if (key === "forward") {
+        this.forwardKeyDown = true;
+      }
+    }
+
+    setKeyUp(key: string) {
+      if (key === "left") {
+        this.leftKeyDown = false;
+      } else if (key === "right") {
+        this.rightKeyDown = false;
+      } else if (key === "forward") {
+        this.forwardKeyDown = false;
+      }
+    }
+
+    update() {
+      if (this.leftKeyDown) {
+        this.rotateLeft();
+      }
+      if (this.rightKeyDown) {
+        this.rotateRight();
+      }
+      if (this.forwardKeyDown) {
+        this.increaseVelocity();
+      }
+      this.slowlyDecreaseVelocity();
+      this.move();
     }
   }
   // Inside this function you will use the classes and functions 
@@ -86,26 +145,41 @@ function asteroids() {
     .attr("style","fill:lime;stroke:purple;stroke-width:1")
 
   const shippyBoy = new Shippyboy(g);
+  
+  keyDownEvents.map((event) => {
+    console.log("keydown")
+    return event.key;
+  }).subscribe((keyCode) => {
+    if(keyCode == "ArrowRight") {
+      shippyBoy.setKeyDown("right");
+    } 
+    if (keyCode == "ArrowLeft") {
+      shippyBoy.setKeyDown("left");
+    }
+    if (keyCode == "ArrowUp") {
+      // shippyBoy.move();
+      shippyBoy.setKeyDown("forward");
+    }
+  });
 
-  Observable.fromEvent<KeyboardEvent>(document, 'keydown')
-    .map((event) => {
-      return event.key;
-    })
-    .subscribe((keyCode) => {
-      if(keyCode == "ArrowRight") {
-        shippyBoy.setRotate(20);
-      } 
-      if (keyCode == "ArrowLeft") {
-        shippyBoy.setRotate(-20);
-      }
-      if (keyCode == "ArrowUp") {
-        // shippyBoy.move();
-      }
-    });
+  keyUpEvents.map((event) => {
+    console.log("keyup")
+    return event.key;
+  }).subscribe((keyCode) => {
+    if(keyCode == "ArrowRight") {
+      shippyBoy.setKeyUp("right");
+    } 
+    if (keyCode == "ArrowLeft") {
+      shippyBoy.setKeyUp("left");
+    }
+    if (keyCode == "ArrowUp") {
+      // shippyBoy.move();
+      shippyBoy.setKeyUp("forward");
+    }
+  });
 
   gameLoop.subscribe((frame: number) => {
-    console.log("tick", frame);
-    shippyBoy.move();
+    shippyBoy.update();
   });
 
 }
