@@ -12,6 +12,7 @@ function asteroids() {
     x: number = 300;
     y: number = 300;
     velocity: number = 0;
+    speed: number = 5;
     leftKeyDown: boolean = false;
     rightKeyDown: boolean = false;
     forwardKeyDown: boolean = false;
@@ -36,14 +37,14 @@ function asteroids() {
       // console.log("current y", this.y)
       // console.log("x rad", this.toRadians(this.x))
       // console.log("y rad", this.toRadians(this.y))
-      const adjrot = this.rotate % 360;
+      const adjustedRotation = this.rotate % 360;
       // console.log("sin", Math.sin(this.toRadians(adjrot)))
       // console.log("cos", Math.cos(this.toRadians(adjrot)))
-      const adjx = Math.sin(this.toRadians(adjrot))
-      const adjy = Math.cos(this.toRadians(adjrot))
-      const moveX = 10 * adjx;
+      const xComponentOfMovement = Math.sin(this.toRadians(adjustedRotation));
+      const yComponentOfMovement = Math.cos(this.toRadians(adjustedRotation));
+      const moveX = this.speed * xComponentOfMovement;
       // time y by -1 because its backwards
-      const moveY = -1 * 10 * adjy;
+      const moveY = -1 * this.speed * yComponentOfMovement;
       // console.log(moveX)
       // console.log(moveY)
       this.x += moveX * this.velocity;

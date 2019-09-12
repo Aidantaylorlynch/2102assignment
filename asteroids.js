@@ -9,6 +9,7 @@ function asteroids() {
             this.x = 300;
             this.y = 300;
             this.velocity = 0;
+            this.speed = 5;
             this.leftKeyDown = false;
             this.rightKeyDown = false;
             this.forwardKeyDown = false;
@@ -22,11 +23,11 @@ function asteroids() {
             return angle * (Math.PI / 180);
         }
         move() {
-            const adjrot = this.rotate % 360;
-            const adjx = Math.sin(this.toRadians(adjrot));
-            const adjy = Math.cos(this.toRadians(adjrot));
-            const moveX = 10 * adjx;
-            const moveY = -1 * 10 * adjy;
+            const adjustedRotation = this.rotate % 360;
+            const xComponentOfMovement = Math.sin(this.toRadians(adjustedRotation));
+            const yComponentOfMovement = Math.cos(this.toRadians(adjustedRotation));
+            const moveX = this.speed * xComponentOfMovement;
+            const moveY = -1 * this.speed * yComponentOfMovement;
             this.x += moveX * this.velocity;
             this.y += moveY * this.velocity;
             if (this.x < 0) {
