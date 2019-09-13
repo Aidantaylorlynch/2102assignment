@@ -44,7 +44,7 @@ function asteroids() {
 
     abstract setEntityWidth(): void;
 
-    destroy() {
+    destroy(): void {
       // remove svg from screen
       this.basicEntity.elem.remove();
       // overwrite the whole gameObjects/lasers array to avoid mutating
@@ -60,7 +60,7 @@ function asteroids() {
     };
 
     // wrap object so for torus topology
-    wrap() {
+    wrap(): void {
       if (this.x < 0) {
         this.x += 600;
       }
@@ -80,18 +80,18 @@ function asteroids() {
     }
 
     // simple function to convert from angle to radians needed for movement calculations
-    toRadians(angle: number) {
+    toRadians(angle: number): number {
       return angle * (Math.PI / 180);
     }
 
-    increaseVelocity() {
+    increaseVelocity(): void {
       if (this.velocity < 1) {
         this.velocity += 0.1;
       }
     }
 
     // this will be called each frame to slow the ship down
-    slowlyDecreaseVelocity() {
+    slowlyDecreaseVelocity(): void {
       if (this.velocity > 0) {
         this.velocity -= 0.01;
       }
@@ -125,13 +125,13 @@ function asteroids() {
       this.width = 30;
     }
 
-    updateSVGMovementAttributes() {
+    updateSVGMovementAttributes(): void {
       // manipulate svg elements. Not happy with the amount of side effects here
       const transform = "translate(" + this.x + " " + this.y + ") " + "rotate(" + this.rotate + ")";
       this.basicEntity.attr("transform", transform.toString());
     }
     
-    setKeyDown(key: string) {
+    setKeyDown(key: string): void {
       if (key === "left") {
         this.leftKeyDown = true;
       } else if (key === "right") {
@@ -143,7 +143,7 @@ function asteroids() {
       }
     }
 
-    setKeyUp(key: string) {
+    setKeyUp(key: string): void {
       if (key === "left") {
         this.leftKeyDown = false;
       } else if (key === "right") {
@@ -155,21 +155,21 @@ function asteroids() {
       }
     }
 
-    setRotation(newRot: number) {
+    setRotation(newRot: number): void {
       this.rotate = this.rotate + newRot;
     }
 
-    rotateLeft() {
+    rotateLeft(): void {
       // adjust angle ship is facing
       this.setRotation(-5);
     }
 
-    rotateRight() {
+    rotateRight(): void {
       // adjust angle ship is facing
       this.setRotation(5);
     }
 
-    shoot() {
+    shoot(): void {
       // to create a laser, give it the same movement characteristics as the ship to give the illusion of it being 'shot'
       const pewPew = new Laser(this.parentElement, 5, this.x, this.y, this.getXDirection(), this.getYDirection());
       // keep track in both gameObjects and lasers for quick iteration
@@ -179,21 +179,21 @@ function asteroids() {
       this.spacebarDown = false;
     }
 
-    getXDirection() {
+    getXDirection(): number {
       // get the x component of movement using sin of angle the ship is currently facing
       // use modulo because rotation can go beyond 360
       const adjustedRotation = this.rotate % 360;
       return Math.sin(this.toRadians(adjustedRotation));
     }
 
-    getYDirection() {
+    getYDirection(): number {
       // get the y component of movement using sin of angle the ship is currently facing
       // use modulo because rotation can go beyond 360
       const adjustedRotation = this.rotate % 360;
       return Math.cos(this.toRadians(adjustedRotation));
     }
 
-    move() {
+    move(): void {
       const xComponentOfMovement = this.getXDirection()
       const yComponentOfMovement = this.getYDirection();
       const moveX = this.speed * xComponentOfMovement;
@@ -209,7 +209,7 @@ function asteroids() {
       this.updateSVGMovementAttributes();
     }
     
-    update() {
+    update(): void {
       // basic update method to be called by gameloop
       if (this.leftKeyDown) {
         this.rotateLeft();
@@ -270,10 +270,10 @@ function asteroids() {
       this.y += this.yDirection;
       this.updateSVGMovementAttributes();
       this.wrap();
-    }
+    };
     update(): void {
       this.move();
-    }
+    };
   }  
 
   class Laser extends BasicEntity {
@@ -337,6 +337,13 @@ function asteroids() {
   let gameObjectsObservable = Observable.fromArray<BasicEntity>(gameObjects); // create observable from game objects
   const keyDownEventsObservable = Observable.fromEvent<KeyboardEvent>(document, 'keydown'); // observable from document keydown events
   const keyUpEventsObservable = Observable.fromEvent<KeyboardEvent>(document, 'keyup'); // observable from document keyup events
+  
+  // setup game by getting references to svg and other html elements
+  const svg = document.getElementById("canvas")!;
+  const scoreElement = document.getElementById("score");
+  const scoreHeader = document.getElementById("scoreHeader");
+  const gameOverElement = document.getElementById("gameOver");
+  const retryButton = document.getElementById("retryButton");
 
   const createEllipse = (parentElement:HTMLElement, xCenter: number, yCenter: number, xRadius: number, yRadius: number, color: string): Elem => {
     // function to easily create an ellipse
@@ -373,7 +380,7 @@ function asteroids() {
     return Observable.fromArray<T>(observable);
   };
 
-  const spawnAsteroid = () => {
+  const spawnAsteroid = (): void => {
     // spawn an ateroid with a random radius
     let radius = Math.floor((Math.random() * 50));
     if (radius < 10) {
@@ -382,16 +389,16 @@ function asteroids() {
     gameObjects.push(new Asteroid(svg, radius));
   }
 
-  const resetScore = () => {
+  const resetScore = (): void => {
     score = 0;
   }
 
-  const incrementScore = () => {
+  const incrementScore = (): void => {
     score += 1;
     updateScoreUI();
   }
 
-  const endGame = () => {
+  const endGame = (): void => {
     // set visibility of ui elements
     if (gameOverElement && scoreHeader) {
       setVisibility(gameOverElement, true);
@@ -399,21 +406,25 @@ function asteroids() {
     };
   };
 
-  const setVisibility = (ele: HTMLElement, visible: boolean) => {
+  const setVisibility = (ele: HTMLElement, visible: boolean): void => {
+    // change the style attribute of an element to hide or show it
     visible === true? ele.style.visibility = "visible": ele.style.visibility = "hidden"; 
   }
 
-  const updateScoreUI = () => {
+  const updateScoreUI = (): void => {
+    // replace html text with current score
     if (scoreElement) {
       scoreElement.innerText = score.toString();
     }; 
   }
 
-  const reset = () => {
+  const reset = (): void => {
+    // function to restart the game from empty state
     // remove all existing game objects
     gameObjects.forEach((gameObject) => {
       gameObject.basicEntity.elem.remove();
     })
+    // empty game objects
     gameObjects = [];
     lasers = [];
     resetScore();
@@ -432,17 +443,12 @@ function asteroids() {
     spawnAsteroid();
   }
 
-  // setup game
-  const svg = document.getElementById("canvas")!;
-  const scoreElement = document.getElementById("score");
-  const scoreHeader = document.getElementById("scoreHeader");
-  const gameOverElement = document.getElementById("gameOver");
-  const retryButton = document.getElementById("retryButton");
   shippyBoy = new Ship(svg, 300, 300);
   gameObjects.push(shippyBoy);
   spawnAsteroid();
 
   if (retryButton) {
+    // observable from click event on button we will listen to in order to reset game
     Observable.fromEvent(retryButton, 'click').subscribe((event) => {
       reset();
     });
@@ -451,6 +457,7 @@ function asteroids() {
   keyDownEventsObservable.map((event) => {
     return event.key;
   }).subscribe((keyCode) => {
+    // we want to save which keys have been pressed so that object knows what movement to apply when update is called
     if(keyCode == "ArrowRight") {
       shippyBoy.setKeyDown("right");
     } 
@@ -468,6 +475,7 @@ function asteroids() {
   keyUpEventsObservable.map((event) => {
     return event.key;
   }).subscribe((keyCode) => {
+    // we want to save which keys have been released so that object knows what movement to apply when update is called
     if(keyCode == "ArrowRight") {
       shippyBoy.setKeyUp("right");
     } 
@@ -478,16 +486,19 @@ function asteroids() {
       shippyBoy.setKeyUp("forward");
     }
     if (keyCode == " ") {
+      // this gets reset after being pressed, but reset here anyway
       shippyBoy.setKeyUp("spacebar");
     }
   });
 
   gameLoop.subscribe((frame: number) => {
+    // main game loop
     gameObjectsObservable
       .forEach((gameObject) => {
         gameObject.update();
       })
       .subscribe((gameObject) => {
+        // go through all game objects and look for collisions between asteroids and players
         if (gameObject.objectType === objectTypes.asteroid) {
           if (collision(shippyBoy, gameObject)) {
             shippyBoy.destroy();
@@ -496,6 +507,7 @@ function asteroids() {
           }
           lasersObservable
             .forEach((laser) => {
+              // for each asteroid check if its been hit with a laser
               if (collision(laser, gameObject)) {
                 laser.destroy();
                 gameObject.destroy();

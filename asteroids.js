@@ -185,9 +185,11 @@ function asteroids() {
             this.updateSVGMovementAttributes();
             this.wrap();
         }
+        ;
         update() {
             this.move();
         }
+        ;
     }
     class Laser extends BasicEntity {
         constructor(parentElement, _radius, xStart, yStart, _xDirection, _yDirection) {
@@ -243,6 +245,11 @@ function asteroids() {
     let gameObjectsObservable = Observable.fromArray(gameObjects);
     const keyDownEventsObservable = Observable.fromEvent(document, 'keydown');
     const keyUpEventsObservable = Observable.fromEvent(document, 'keyup');
+    const svg = document.getElementById("canvas");
+    const scoreElement = document.getElementById("score");
+    const scoreHeader = document.getElementById("scoreHeader");
+    const gameOverElement = document.getElementById("gameOver");
+    const retryButton = document.getElementById("retryButton");
     const createEllipse = (parentElement, xCenter, yCenter, xRadius, yRadius, color) => {
         return new Elem(parentElement, 'ellipse')
             .attr("cx", xCenter)
@@ -319,11 +326,6 @@ function asteroids() {
         gameObjects.push(shippyBoy);
         spawnAsteroid();
     };
-    const svg = document.getElementById("canvas");
-    const scoreElement = document.getElementById("score");
-    const scoreHeader = document.getElementById("scoreHeader");
-    const gameOverElement = document.getElementById("gameOver");
-    const retryButton = document.getElementById("retryButton");
     shippyBoy = new Ship(svg, 300, 300);
     gameObjects.push(shippyBoy);
     spawnAsteroid();
