@@ -10,6 +10,10 @@ function asteroids() {
         }
         destroy() {
             this.basicEntity.elem.remove();
+            gameObjects = gameObjects.filter((gameObject) => {
+                console.log(this, gameObject);
+                return gameObject !== this;
+            });
         }
         setEntity(entity) {
             this.basicEntity = entity;
@@ -208,6 +212,9 @@ function asteroids() {
             this.x += this.speed * this.xDirection;
             this.y += -1 * this.speed * this.yDirection;
             this.updateSVGMovementAttributes();
+            if (this.x < 0 || this.y < 0 || this.x > 600 || this.y > 600) {
+                this.destroy();
+            }
         }
         update() {
             this.move();
@@ -220,8 +227,8 @@ function asteroids() {
         }
     }
     const gameLoop = Observable.interval(16.7);
-    const gameObjects = [];
-    const lasers = [];
+    let gameObjects = [];
+    let lasers = [];
     const objectTypes = {
         player: 0,
         asteroid: 1,
@@ -249,7 +256,6 @@ function asteroids() {
             entityOne.x + entityOne.width > entityTwo.x &&
             entityOne.y < entityTwo.y + entityTwo.height &&
             entityOne.y + entityOne.height > entityTwo.y) {
-            console.log("collision!");
             return true;
         }
         else {
@@ -301,12 +307,10 @@ function asteroids() {
             }).subscribe((gameObject) => {
                 if (gameObject.objectType === objectTypes.asteroid) {
                     if (collision(shippyBoy, gameObject)) {
-                        console.log("now do something");
                         shippyBoy.destroy();
                     }
                     lasersObservable.map((laser) => {
                         if (collision(laser, gameObject)) {
-                            console.log("laser hit");
                             laser.destroy();
                             gameObject.destroy();
                         }
