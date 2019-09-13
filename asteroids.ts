@@ -6,7 +6,7 @@ function asteroids() {
     leftKeyDown: boolean;
     rightKeyDown: boolean;
     forwardKeyDown: boolean;
-    spacebar: boolean;
+    spacebarDown: boolean;
     setKeyDown: (key: string) => void;
     setKeyUp: (key: string) => void;
   }
@@ -38,6 +38,10 @@ function asteroids() {
 
     abstract setEntityWidth(): void;
 
+    destroy() {
+      this.basicEntity.elem.remove();
+    }
+
     setEntity(entity: Elem) {
       this.basicEntity = entity;
     }
@@ -60,10 +64,11 @@ function asteroids() {
   }  
 
   class Ship extends BasicEntity implements controllable {
-    spacebar: boolean = false;
+    spacebarDown: boolean = false;
     leftKeyDown: boolean = false;
     rightKeyDown: boolean = false;
     forwardKeyDown: boolean = false;
+    parentElement: HTMLElement;
     rotate: number = 0;
     
     constructor(parentElement: HTMLElement, xStart: number, yStart: number) {
@@ -72,6 +77,7 @@ function asteroids() {
       this.setEntityWidth();
       const ship = createPolygon(parentElement, ["-15,20", "15,20", "0,-20"]);
       this.setEntity(ship);
+      this.parentElement = parentElement;
     }
 
     setEntityHeight(): void {
@@ -97,7 +103,7 @@ function asteroids() {
       } else if (key === "forward") {
         this.forwardKeyDown = true;
       } else if (key === "spacebar") {
-        this.spacebar = true;
+        this.spacebarDown = true;
       }
     }
 
@@ -109,7 +115,7 @@ function asteroids() {
       } else if (key === "forward") {
         this.forwardKeyDown = false;
       } else if (key === "spacebar") {
-        this.spacebar = false;
+        this.spacebarDown = false;
       }
     }
 
@@ -126,14 +132,26 @@ function asteroids() {
     }
 
     shoot() {
-      const lasyBoy = new Laser(this.x, this.y);
+      const pewPew = new Laser(this.parentElement, 5, this.x, this.y, this.getXDirection(), this.getYDirection());
+      gameObjects.push(pewPew);
+      lasers.push(pewPew);
+      // have to reset or it draws
+      this.spacebarDown = false;
+    }
+
+    getXDirection() {
+      const adjustedRotation = this.rotate % 360;
+      return Math.sin(this.toRadians(adjustedRotation));
+    }
+
+    getYDirection() {
+      const adjustedRotation = this.rotate % 360;
+      return Math.cos(this.toRadians(adjustedRotation));
     }
 
     move() {
-      const adjustedRotation = this.rotate % 360;
-
-      const xComponentOfMovement = Math.sin(this.toRadians(adjustedRotation));
-      const yComponentOfMovement = Math.cos(this.toRadians(adjustedRotation));
+      const xComponentOfMovement = this.getXDirection()
+      const yComponentOfMovement = this.getYDirection();
       const moveX = this.speed * xComponentOfMovement;
       // time y by -1 because its backwards
       const moveY = -1 * this.speed * yComponentOfMovement;
@@ -165,6 +183,9 @@ function asteroids() {
       if (this.forwardKeyDown) {
         this.increaseVelocity();
       }
+      if (this.spacebarDown) {
+        this.shoot();
+      }
       this.slowlyDecreaseVelocity();
       this.move();
     }
@@ -180,7 +201,7 @@ function asteroids() {
       this.radius = _radius;
       this.setEntityHeight();
       this.setEntityWidth();
-      const asteroid = createEllipse(parentElement, this.x, this.y, this.radius, this.radius);
+      const asteroid = createEllipse(parentElement, this.x, this.y, this.radius, this.radius, "brown");
       this.setEntity(asteroid);
       // set random speed
       this.speed = Math.floor(Math.random() * 5);
@@ -210,6 +231,18 @@ function asteroids() {
       this.x += this.xDirection;
       this.y += this.yDirection;
       this.updateSVGMovementAttributes();
+      if (this.x < 0) {
+        this.x += 600;
+      }
+      if (this.x > 600) {
+        this.x = 0;
+      }
+      if (this.y < 0) {
+        this.y += 600;
+      }
+      if (this.y > 600) {
+        this.y = 0;
+      }
     }
     update(): void {
       this.move();
@@ -217,58 +250,68 @@ function asteroids() {
   }  
 
   class Laser extends BasicEntity {
-    constructor(xStart: number, yStart: number) {
+    xDirection: number;
+    yDirection: number;
+    radius: number;
+    constructor(parentElement: HTMLElement, _radius: number, xStart: number, yStart: number, _xDirection: number, _yDirection: number) {
       super(objectTypes.laser, xStart, yStart);
+      this.xDirection = _xDirection;
+      this.yDirection = _yDirection;
+      this.radius = _radius;
+      this.speed = 10;
+      this.setEntityHeight();
+      this.setEntityWidth();
+      const laser = createEllipse(parentElement, this.x, this.y, this.radius, this.radius, "white");
+      this.setEntity(laser);
     }
     updateSVGMovementAttributes(): void {
-      throw new Error("Method not implemented.");
-    }    move(): void {
-      throw new Error("Method not implemented.");
+      this.basicEntity.attr("cx", this.x);
+      this.basicEntity.attr("cy", this.y);
+    }    
+    move(): void {
+      this.x += this.speed * this.xDirection;
+      this.y += -1 * this.speed * this.yDirection;
+      this.updateSVGMovementAttributes();
     }
     update(): void {
-      throw new Error("Method not implemented.");
+      this.move();
     }
     setEntityHeight(): void {
-      throw new Error("Method not implemented.");
+      this.height = 5;
     }
     setEntityWidth(): void {
-      throw new Error("Method not implemented.");
+      this.width = 5;
     }
   }
 
   const gameLoop = Observable.interval(16.7);
   const gameObjects: Array<BasicEntity> = [];
+  const lasers: Array<BasicEntity> = [];
   const objectTypes = {
     player: 0,
     asteroid: 1,
     laser: 2
   };
   
+  const lasersObservable = Observable.fromArray<BasicEntity>(lasers);
   const gameObjectsObservable = Observable.fromArray<BasicEntity>(gameObjects);
   const keyDownEventsObservable = Observable.fromEvent<KeyboardEvent>(document, 'keydown');
   const keyUpEventsObservable = Observable.fromEvent<KeyboardEvent>(document, 'keyup');
 
-  const createEllipse = (parentElement:HTMLElement, xCenter: number, yCenter: number, xRadius: number, yRadius: number): Elem => {
+  const createEllipse = (parentElement:HTMLElement, xCenter: number, yCenter: number, xRadius: number, yRadius: number, color: string): Elem => {
     return new Elem(parentElement, 'ellipse')
       .attr("cx", xCenter)
       .attr("cy", yCenter)
       .attr("rx", xRadius)
       .attr("ry", yRadius)
-      .attr("style", "fill:brown")
+      .attr("style", "fill:" + color);
   };
   const createPolygon = (parentElement:HTMLElement, pointsList: Array<string>): Elem => {
     return new Elem(parentElement, 'polygon') 
       .attr("points",pointsList.join(" "))
       .attr("style","fill:lime;stroke:purple;stroke-width:1")
   };
-  const createLine = (parentElement:HTMLElement, x1: number, y1: number, x2: number, y2: number) => {
-    return new Elem(parentElement, 'line') 
-      .attr("x1", x1)
-      .attr("y1", y1)
-      .attr("x2", x2)
-      .attr("y2", y2)
-      .attr("stroke","white")
-  }
+
   const collision = (entityOne: BasicEntity, entityTwo: BasicEntity): boolean => {
     if (entityOne.x < entityTwo.x + entityTwo.width &&
         entityOne.x + entityOne.width > entityTwo.x &&
@@ -357,7 +400,16 @@ function asteroids() {
           if (collision(shippyBoy, gameObject)) {
             console.log("now do something")
             // do something you bastard
+            shippyBoy.destroy();
           }
+          lasersObservable.map((laser) => {
+            if (collision(laser, gameObject)) {
+              console.log("laser hit")
+              // do something you bastard
+              laser.destroy();
+              gameObject.destroy();
+            }
+          }).subscribe(() => {});
         }
       })
     });
