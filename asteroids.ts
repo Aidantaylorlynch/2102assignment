@@ -6,6 +6,7 @@ function asteroids() {
     leftKeyDown: boolean;
     rightKeyDown: boolean;
     forwardKeyDown: boolean;
+    spacebar: boolean;
     setKeyDown: (key: string) => void;
     setKeyUp: (key: string) => void;
   }
@@ -17,6 +18,9 @@ function asteroids() {
     y: number;
     velocity: number = 0;
     speed: number = 5;
+    height!: number;
+    width!: number;
+  
 
     constructor(_objectType: number, _x: number, _y: number) {
       this.objectType = _objectType;
@@ -29,6 +33,10 @@ function asteroids() {
     abstract move(): void;
 
     abstract update(): void;
+
+    abstract setEntityHeight(): void;
+
+    abstract setEntityWidth(): void;
 
     setEntity(entity: Elem) {
       this.basicEntity = entity;
@@ -52,6 +60,7 @@ function asteroids() {
   }  
 
   class Ship extends BasicEntity implements controllable {
+    spacebar: boolean = false;
     leftKeyDown: boolean = false;
     rightKeyDown: boolean = false;
     forwardKeyDown: boolean = false;
@@ -59,8 +68,20 @@ function asteroids() {
     
     constructor(parentElement: HTMLElement, xStart: number, yStart: number) {
       super(objectTypes.player, xStart, yStart);
+      this.setEntityHeight();
+      this.setEntityWidth();
       const ship = createPolygon(parentElement, ["-15,20", "15,20", "0,-20"]);
       this.setEntity(ship);
+    }
+
+    setEntityHeight(): void {
+      // hard coding because we only need to set it once
+      this.height = 40;
+    }
+
+    setEntityWidth(): void {
+      // hard coding because we only need to set it once
+      this.width = 30;
     }
 
     updateSVGMovementAttributes() {
@@ -75,6 +96,8 @@ function asteroids() {
         this.rightKeyDown = true;
       } else if (key === "forward") {
         this.forwardKeyDown = true;
+      } else if (key === "spacebar") {
+        this.spacebar = true;
       }
     }
 
@@ -85,6 +108,8 @@ function asteroids() {
         this.rightKeyDown = false;
       } else if (key === "forward") {
         this.forwardKeyDown = false;
+      } else if (key === "spacebar") {
+        this.spacebar = false;
       }
     }
 
@@ -98,6 +123,10 @@ function asteroids() {
 
     rotateRight() {
       this.setRotation(5);
+    }
+
+    shoot() {
+      const lasyBoy = new Laser(this.x, this.y);
     }
 
     move() {
@@ -144,10 +173,14 @@ function asteroids() {
   class Asteroid extends BasicEntity {
     xDirection: number;
     yDirection: number;
-    constructor(parentElement: HTMLElement) {
+    radius: number;
+    constructor(parentElement: HTMLElement, _radius: number) {
       // spawn an asteroid randomly
       super(objectTypes.asteroid, Math.floor((Math.random() * 600)), Math.floor((Math.random() * 600)));
-      const asteroid = createEllipse(parentElement, this.x, this.y, 20, 20);
+      this.radius = _radius;
+      this.setEntityHeight();
+      this.setEntityWidth();
+      const asteroid = createEllipse(parentElement, this.x, this.y, this.radius, this.radius);
       this.setEntity(asteroid);
       // set random speed
       this.speed = Math.floor(Math.random() * 5);
@@ -158,6 +191,14 @@ function asteroids() {
       const randomDirection = Math.floor(Math.random() * 360);
       this.xDirection = this.speed * Math.sin(this.toRadians(randomDirection));
       this.yDirection = -1 * this.speed * Math.cos(this.toRadians(randomDirection));
+    }
+
+    setEntityHeight(): void {
+      this.height = this.radius * 2;
+    }
+
+    setEntityWidth(): void {
+      this.width = this.radius * 2;
     }
 
     updateSVGMovementAttributes(): void {
@@ -174,6 +215,27 @@ function asteroids() {
       this.move();
     }
   }  
+
+  class Laser extends BasicEntity {
+    constructor(xStart: number, yStart: number) {
+      super(objectTypes.laser, xStart, yStart);
+    }
+    updateSVGMovementAttributes(): void {
+      throw new Error("Method not implemented.");
+    }    move(): void {
+      throw new Error("Method not implemented.");
+    }
+    update(): void {
+      throw new Error("Method not implemented.");
+    }
+    setEntityHeight(): void {
+      throw new Error("Method not implemented.");
+    }
+    setEntityWidth(): void {
+      throw new Error("Method not implemented.");
+    }
+  }
+
   const gameLoop = Observable.interval(16.7);
   const gameObjects: Array<BasicEntity> = [];
   const objectTypes = {
@@ -198,6 +260,26 @@ function asteroids() {
     return new Elem(parentElement, 'polygon') 
       .attr("points",pointsList.join(" "))
       .attr("style","fill:lime;stroke:purple;stroke-width:1")
+  };
+  const createLine = (parentElement:HTMLElement, x1: number, y1: number, x2: number, y2: number) => {
+    return new Elem(parentElement, 'line') 
+      .attr("x1", x1)
+      .attr("y1", y1)
+      .attr("x2", x2)
+      .attr("y2", y2)
+      .attr("stroke","white")
+  }
+  const collision = (entityOne: BasicEntity, entityTwo: BasicEntity): boolean => {
+    if (entityOne.x < entityTwo.x + entityTwo.width &&
+        entityOne.x + entityOne.width > entityTwo.x &&
+        entityOne.y < entityTwo.y + entityTwo.height &&
+        entityOne.y + entityOne.height > entityTwo.y
+      ) {
+        console.log("collision!")
+        return true;
+      } else {
+        return false;
+      }
   }
   // Inside this function you will use the classes and functions 
   // defined in svgelement.ts and observable.ts
@@ -225,7 +307,8 @@ function asteroids() {
   // let asteroid = createEllipse(svg, 200, 200, 30, 30);
 
   const shippyBoy = new Ship(svg, 300, 300);
-  const astyBoy = new Asteroid(svg);
+  const astyBoy = new Asteroid(svg, 20);
+  // createLine(svg, 20, 20, 25, 25);
 
   gameObjects.push(shippyBoy);
   gameObjects.push(astyBoy);
@@ -240,8 +323,10 @@ function asteroids() {
       shippyBoy.setKeyDown("left");
     }
     if (keyCode == "ArrowUp") {
-      // shippyBoy.move();
       shippyBoy.setKeyDown("forward");
+    }
+    if (keyCode == " ") {
+      shippyBoy.setKeyDown("spacebar");
     }
   });
 
@@ -255,8 +340,10 @@ function asteroids() {
       shippyBoy.setKeyUp("left");
     }
     if (keyCode == "ArrowUp") {
-      // shippyBoy.move();
       shippyBoy.setKeyUp("forward");
+    }
+    if (keyCode == " ") {
+      shippyBoy.setKeyUp("spacebar");
     }
   });
 
@@ -266,7 +353,12 @@ function asteroids() {
       gameObjectsObservable.map((gameObject) => {
         return gameObject;
       }).subscribe((gameObject) => {
-        // check 4 coliisions
+        if (gameObject.objectType === objectTypes.asteroid) {
+          if (collision(shippyBoy, gameObject)) {
+            console.log("now do something")
+            // do something you bastard
+          }
+        }
       })
     });
   });

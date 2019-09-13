@@ -28,12 +28,21 @@ function asteroids() {
     class Ship extends BasicEntity {
         constructor(parentElement, xStart, yStart) {
             super(objectTypes.player, xStart, yStart);
+            this.spacebar = false;
             this.leftKeyDown = false;
             this.rightKeyDown = false;
             this.forwardKeyDown = false;
             this.rotate = 0;
+            this.setEntityHeight();
+            this.setEntityWidth();
             const ship = createPolygon(parentElement, ["-15,20", "15,20", "0,-20"]);
             this.setEntity(ship);
+        }
+        setEntityHeight() {
+            this.height = 40;
+        }
+        setEntityWidth() {
+            this.width = 30;
         }
         updateSVGMovementAttributes() {
             const transform = "translate(" + this.x + " " + this.y + ") " + "rotate(" + this.rotate + ")";
@@ -49,6 +58,9 @@ function asteroids() {
             else if (key === "forward") {
                 this.forwardKeyDown = true;
             }
+            else if (key === "spacebar") {
+                this.spacebar = true;
+            }
         }
         setKeyUp(key) {
             if (key === "left") {
@@ -60,6 +72,9 @@ function asteroids() {
             else if (key === "forward") {
                 this.forwardKeyDown = false;
             }
+            else if (key === "spacebar") {
+                this.spacebar = false;
+            }
         }
         setRotation(newRot) {
             this.rotate = this.rotate + newRot;
@@ -69,6 +84,9 @@ function asteroids() {
         }
         rotateRight() {
             this.setRotation(5);
+        }
+        shoot() {
+            const lasyBoy = new Laser(this.x, this.y);
         }
         move() {
             const adjustedRotation = this.rotate % 360;
@@ -107,9 +125,12 @@ function asteroids() {
         }
     }
     class Asteroid extends BasicEntity {
-        constructor(parentElement) {
+        constructor(parentElement, _radius) {
             super(objectTypes.asteroid, Math.floor((Math.random() * 600)), Math.floor((Math.random() * 600)));
-            const asteroid = createEllipse(parentElement, this.x, this.y, 20, 20);
+            this.radius = _radius;
+            this.setEntityHeight();
+            this.setEntityWidth();
+            const asteroid = createEllipse(parentElement, this.x, this.y, this.radius, this.radius);
             this.setEntity(asteroid);
             this.speed = Math.floor(Math.random() * 5);
             if (this.speed === 0) {
@@ -118,6 +139,12 @@ function asteroids() {
             const randomDirection = Math.floor(Math.random() * 360);
             this.xDirection = this.speed * Math.sin(this.toRadians(randomDirection));
             this.yDirection = -1 * this.speed * Math.cos(this.toRadians(randomDirection));
+        }
+        setEntityHeight() {
+            this.height = this.radius * 2;
+        }
+        setEntityWidth() {
+            this.width = this.radius * 2;
         }
         updateSVGMovementAttributes() {
             this.basicEntity.attr("cx", this.x);
@@ -130,6 +157,26 @@ function asteroids() {
         }
         update() {
             this.move();
+        }
+    }
+    class Laser extends BasicEntity {
+        constructor(xStart, yStart) {
+            super(objectTypes.laser, xStart, yStart);
+        }
+        updateSVGMovementAttributes() {
+            throw new Error("Method not implemented.");
+        }
+        move() {
+            throw new Error("Method not implemented.");
+        }
+        update() {
+            throw new Error("Method not implemented.");
+        }
+        setEntityHeight() {
+            throw new Error("Method not implemented.");
+        }
+        setEntityWidth() {
+            throw new Error("Method not implemented.");
         }
     }
     const gameLoop = Observable.interval(16.7);
@@ -155,9 +202,29 @@ function asteroids() {
             .attr("points", pointsList.join(" "))
             .attr("style", "fill:lime;stroke:purple;stroke-width:1");
     };
+    const createLine = (parentElement, x1, y1, x2, y2) => {
+        return new Elem(parentElement, 'line')
+            .attr("x1", x1)
+            .attr("y1", y1)
+            .attr("x2", x2)
+            .attr("y2", y2)
+            .attr("stroke", "white");
+    };
+    const collision = (entityOne, entityTwo) => {
+        if (entityOne.x < entityTwo.x + entityTwo.width &&
+            entityOne.x + entityOne.width > entityTwo.x &&
+            entityOne.y < entityTwo.y + entityTwo.height &&
+            entityOne.y + entityOne.height > entityTwo.y) {
+            console.log("collision!");
+            return true;
+        }
+        else {
+            return false;
+        }
+    };
     const svg = document.getElementById("canvas");
     const shippyBoy = new Ship(svg, 300, 300);
-    const astyBoy = new Asteroid(svg);
+    const astyBoy = new Asteroid(svg, 20);
     gameObjects.push(shippyBoy);
     gameObjects.push(astyBoy);
     keyDownEventsObservable.map((event) => {
@@ -172,6 +239,9 @@ function asteroids() {
         if (keyCode == "ArrowUp") {
             shippyBoy.setKeyDown("forward");
         }
+        if (keyCode == " ") {
+            shippyBoy.setKeyDown("spacebar");
+        }
     });
     keyUpEventsObservable.map((event) => {
         return event.key;
@@ -185,6 +255,9 @@ function asteroids() {
         if (keyCode == "ArrowUp") {
             shippyBoy.setKeyUp("forward");
         }
+        if (keyCode == " ") {
+            shippyBoy.setKeyUp("spacebar");
+        }
     });
     gameLoop.subscribe((frame) => {
         gameObjects.forEach((gameObject) => {
@@ -192,6 +265,11 @@ function asteroids() {
             gameObjectsObservable.map((gameObject) => {
                 return gameObject;
             }).subscribe((gameObject) => {
+                if (gameObject.objectType === objectTypes.asteroid) {
+                    if (collision(shippyBoy, gameObject)) {
+                        console.log("now do something");
+                    }
+                }
             });
         });
     });
