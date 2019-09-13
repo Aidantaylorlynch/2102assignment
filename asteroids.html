@@ -13,14 +13,29 @@
         <script src="observable.js"></script>
         <script src="asteroids.js"></script>
     </head>
-    <body style="box-sizing: border-box;">
+    <body style="box-sizing: border-box;display: flex; flex-direction: row; justify-content: center">
         <div>
-            <h1 style="display: inline">Asteroids</h1>
-            <h4 style="display: inline" id="scoreHeader">Score: <span id="score">0</span></h4>
-            <h4 style="display: inline; visibility: hidden;" id="gameOver">GAME OVER <button id="retryButton">Retry</button></h4>
+            <div>
+                <h1 style="display: inline">Asteroids</h1>
+                <h4 style="display: inline" id="scoreHeader">Score: <span id="score">0</span></h4>
+                <h4 style="display: inline; visibility: hidden;" id="gameOver">GAME OVER <button id="retryButton">Retry</button></h4>
+            </div>
+            <div>
+                <svg id="canvas" width="600" height="600"/>
+            </div>
         </div>
-        <div>
-            <svg id="canvas" width="600" height="600"/>
+        <div style="padding: 30">
+            <p>The aim of this game is to get your score as high as possible.</p> 
+            <p>If you hit asteroids you will die. </p>
+            <p>You can shoot as many lasers as you want. </p>
+            <p>Controls: Up arrow - Thrust, Left/Right - Steer, Spacebar - Shoot</p>
+            <p>features:</p>
+            <p>- score: as you shoot asteroids your score will increase</p>
+            <p>- svg: game objects are made with svg</p>
+            <p>- input: input is taken from the keyboard</p>
+            <p>- wrap: objects that fly off the screen (except lasers) will appear on the other side of the screen (torus topology)</p>
+            <p>- collisions: collisions between the palyer and asteroid will end the game. Collisions between lasers and asteroids will earn score and destroy asteroids</p>
+            <p>- thrust: the players ship will reach a maximum speed the longer you hold down the forward arrow. It will slow down overtime if you let go.</p>
         </div>
     </body>
 </html>

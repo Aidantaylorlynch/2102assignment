@@ -1,6 +1,14 @@
 // FIT2102 2019 Assignment 1
 // https://docs.google.com/document/d/1Gr-M6LTU-tfm4yabqZWJYg-zTjEVqHKKTCvePGCYsUA/edit?usp=sharing
-
+// the basic design of this game is to use the interval method from Observable to create 'frames'. These frames will form the main game loop, which consists of 
+// going through all game objects, and calling their update method. The basic entity structure is that all objects extend a base class. This base class is abstract,
+// and contains abstract methods which have to be implemented - ie update(). This gives us a nice interface to code to when dealing with lots of different types of 
+// game objects. The next major design decision was to have an array of game objects, and the corrosponding observable object using Observable.FromArray. This was
+// used to make mapping over laser collisions easier, and updating data more straight foward (avoiding nested filters etc). Input was a bit of in issue to begin with,
+// because I was simply reading input at each game frame. This didnt work because the speed at which inputs were received was not fast enough to keep up with the game
+// loop, and in addition you cant get multiple key down events at the same time. So I went with a mapping implementation, which essentially saves the last state of keys,
+// so that when update() is called, it simply has to apply movements based on the latest key state.
+// Finally it was just about keeping track of all these entities and performing transformations on them correcly.
 function asteroids() {
   interface controllable {
     // interface to define some data needed for objects that need to be controlled
