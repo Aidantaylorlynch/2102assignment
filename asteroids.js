@@ -11,10 +11,10 @@ function asteroids() {
         destroy() {
             this.basicEntity.elem.remove();
             gameObjects = gameObjects.filter((gameObject) => {
-                console.log(this, gameObject);
                 return gameObject !== this;
             });
         }
+        ;
         setEntity(entity) {
             this.basicEntity = entity;
         }

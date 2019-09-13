@@ -40,11 +40,11 @@ function asteroids() {
 
     destroy() {
       this.basicEntity.elem.remove();
+      // overwrite the whole gameObjects array to avoid mutating
       gameObjects = gameObjects.filter((gameObject) => {
-        console.log(this, gameObject)
         return gameObject !== this;
-      })
-    }
+      });
+    };
 
     setEntity(entity: Elem) {
       this.basicEntity = entity;
@@ -330,34 +330,12 @@ function asteroids() {
         return false;
       }
   }
-  // Inside this function you will use the classes and functions 
-  // defined in svgelement.ts and observable.ts
-  // to add visuals to the svg element in asteroids.html, animate them, and make them interactive.
-  // Study and complete the Observable tasks in the week 4 tutorial worksheet first to get ideas.
 
-  // You will be marked on your functional programming style
-  // as well as the functionality that you implement.
-  // Document your code!  
-  // Explain which ideas you have used ideas from the lectures to 
-  // create reusable, generic functions.
+  // setup game
   const svg = document.getElementById("canvas")!;
-  // make a group for the spaceship and a transform to move it and rotate it
-  // to animate the spaceship you will update the transform property 
-
-  // let g = new Elem(svg,'g')
-
-  // create a polygon shape for the space ship as a child of the transform group
-  // let ship = new Elem(svg, 'polygon') 
-  //   .attr("points","-15,20 15,20 0,-20")
-  //   .attr("style","fill:lime;stroke:purple;stroke-width:1")
-  
-  // let ship = createPolygon(svg, ["-15,20", "15,20", "0,-20"]);
-  
-  // let asteroid = createEllipse(svg, 200, 200, 30, 30);
 
   const shippyBoy = new Ship(svg, 300, 300);
   const astyBoy = new Asteroid(svg, 20);
-  // createLine(svg, 20, 20, 25, 25);
 
   gameObjects.push(shippyBoy);
   gameObjects.push(astyBoy);
