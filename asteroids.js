@@ -11,19 +11,29 @@ function asteroids() {
         destroy() {
             this.basicEntity.elem.remove();
             gameObjects = gameObjects.filter((gameObject) => {
-                if (gameObject === this) {
-                }
                 return gameObject !== this;
             });
             lasers = lasers.filter((gameObject) => {
-                if (gameObject === this) {
-                }
                 return gameObject !== this;
             });
             gameObjectsObservable = updateObservableFromArray(gameObjects);
             lasersObservable = updateObservableFromArray(lasers);
         }
         ;
+        wrap() {
+            if (this.x < 0) {
+                this.x += 600;
+            }
+            if (this.x > 600) {
+                this.x = 0;
+            }
+            if (this.y < 0) {
+                this.y += 600;
+            }
+            if (this.y > 600) {
+                this.y = 0;
+            }
+        }
         setEntity(entity) {
             this.basicEntity = entity;
         }
@@ -123,18 +133,7 @@ function asteroids() {
             const moveY = -1 * this.speed * yComponentOfMovement;
             this.x += moveX * this.velocity;
             this.y += moveY * this.velocity;
-            if (this.x < 0) {
-                this.x += 600;
-            }
-            if (this.x > 600) {
-                this.x = 0;
-            }
-            if (this.y < 0) {
-                this.y += 600;
-            }
-            if (this.x > 600) {
-                this.y = 0;
-            }
+            this.wrap();
             this.updateSVGMovementAttributes();
         }
         update() {
@@ -184,18 +183,7 @@ function asteroids() {
             this.x += this.xDirection;
             this.y += this.yDirection;
             this.updateSVGMovementAttributes();
-            if (this.x < 0) {
-                this.x += 600;
-            }
-            if (this.x > 600) {
-                this.x = 0;
-            }
-            if (this.y < 0) {
-                this.y += 600;
-            }
-            if (this.y > 600) {
-                this.y = 0;
-            }
+            this.wrap();
         }
         update() {
             this.move();
@@ -388,7 +376,7 @@ function asteroids() {
                     gameObject.destroy();
                     endGame();
                 }
-                lasers
+                lasersObservable
                     .forEach((laser) => {
                     if (collision(laser, gameObject)) {
                         laser.destroy();
@@ -396,7 +384,8 @@ function asteroids() {
                         incrementScore();
                         spawnAsteroid();
                     }
-                });
+                })
+                    .subscribe(() => { });
             }
         });
     });
