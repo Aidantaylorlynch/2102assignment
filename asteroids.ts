@@ -2,28 +2,6 @@
 // https://docs.google.com/document/d/1Gr-M6LTU-tfm4yabqZWJYg-zTjEVqHKKTCvePGCYsUA/edit?usp=sharing
 
 function asteroids() {
-  const gameLoop = Observable.interval(16.7);
-  const objectTypes = {
-    player: 0,
-    asteroid: 1,
-    laser: 2
-  };
-  const keyDownEvents = Observable.fromEvent<KeyboardEvent>(document, 'keydown');
-  const keyUpEvents = Observable.fromEvent<KeyboardEvent>(document, 'keyup');
-  const createEllipse = (parentElement:HTMLElement, xCenter: number, yCenter: number, xRadius: number, yRadius: number): Elem => {
-    return new Elem(parentElement, 'ellipse')
-      .attr("cx", xCenter)
-      .attr("cy", yCenter)
-      .attr("rx", xRadius)
-      .attr("ry", yRadius)
-      .attr("style", "fill:brown")
-  };
-  const createPolygon = (parentElement:HTMLElement, pointsList: Array<string>): Elem => {
-    return new Elem(parentElement, 'polygon') 
-      .attr("points",pointsList.join(" "))
-      .attr("style","fill:lime;stroke:purple;stroke-width:1")
-  }
-
   interface controllable {
     leftKeyDown: boolean;
     rightKeyDown: boolean;
@@ -71,7 +49,7 @@ function asteroids() {
         this.velocity -= 0.01;
       }
     }
-  }
+  }  
 
   class Ship extends BasicEntity implements controllable {
     leftKeyDown: boolean = false;
@@ -195,6 +173,31 @@ function asteroids() {
     update(): void {
       this.move();
     }
+  }  
+  const gameLoop = Observable.interval(16.7);
+  const gameObjects: Array<BasicEntity> = [];
+  const objectTypes = {
+    player: 0,
+    asteroid: 1,
+    laser: 2
+  };
+  
+  const gameObjectsObservable = Observable.fromArray<BasicEntity>(gameObjects);
+  const keyDownEventsObservable = Observable.fromEvent<KeyboardEvent>(document, 'keydown');
+  const keyUpEventsObservable = Observable.fromEvent<KeyboardEvent>(document, 'keyup');
+
+  const createEllipse = (parentElement:HTMLElement, xCenter: number, yCenter: number, xRadius: number, yRadius: number): Elem => {
+    return new Elem(parentElement, 'ellipse')
+      .attr("cx", xCenter)
+      .attr("cy", yCenter)
+      .attr("rx", xRadius)
+      .attr("ry", yRadius)
+      .attr("style", "fill:brown")
+  };
+  const createPolygon = (parentElement:HTMLElement, pointsList: Array<string>): Elem => {
+    return new Elem(parentElement, 'polygon') 
+      .attr("points",pointsList.join(" "))
+      .attr("style","fill:lime;stroke:purple;stroke-width:1")
   }
   // Inside this function you will use the classes and functions 
   // defined in svgelement.ts and observable.ts
@@ -224,7 +227,10 @@ function asteroids() {
   const shippyBoy = new Ship(svg, 300, 300);
   const astyBoy = new Asteroid(svg);
 
-  keyDownEvents.map((event) => {
+  gameObjects.push(shippyBoy);
+  gameObjects.push(astyBoy);
+
+  keyDownEventsObservable.map((event) => {
     return event.key;
   }).subscribe((keyCode) => {
     if(keyCode == "ArrowRight") {
@@ -239,7 +245,7 @@ function asteroids() {
     }
   });
 
-  keyUpEvents.map((event) => {
+  keyUpEventsObservable.map((event) => {
     return event.key;
   }).subscribe((keyCode) => {
     if(keyCode == "ArrowRight") {
@@ -255,8 +261,14 @@ function asteroids() {
   });
 
   gameLoop.subscribe((frame: number) => {
-    shippyBoy.update();
-    astyBoy.update();
+    gameObjects.forEach((gameObject) => {
+      gameObject.update();
+      gameObjectsObservable.map((gameObject) => {
+        return gameObject;
+      }).subscribe((gameObject) => {
+        // check 4 coliisions
+      })
+    });
   });
 
 }

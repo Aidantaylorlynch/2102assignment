@@ -1,26 +1,5 @@
 "use strict";
 function asteroids() {
-    const gameLoop = Observable.interval(16.7);
-    const objectTypes = {
-        player: 0,
-        asteroid: 1,
-        laser: 2
-    };
-    const keyDownEvents = Observable.fromEvent(document, 'keydown');
-    const keyUpEvents = Observable.fromEvent(document, 'keyup');
-    const createEllipse = (parentElement, xCenter, yCenter, xRadius, yRadius) => {
-        return new Elem(parentElement, 'ellipse')
-            .attr("cx", xCenter)
-            .attr("cy", yCenter)
-            .attr("rx", xRadius)
-            .attr("ry", yRadius)
-            .attr("style", "fill:brown");
-    };
-    const createPolygon = (parentElement, pointsList) => {
-        return new Elem(parentElement, 'polygon')
-            .attr("points", pointsList.join(" "))
-            .attr("style", "fill:lime;stroke:purple;stroke-width:1");
-    };
     class BasicEntity {
         constructor(_objectType, _x, _y) {
             this.velocity = 0;
@@ -153,10 +132,35 @@ function asteroids() {
             this.move();
         }
     }
+    const gameLoop = Observable.interval(16.7);
+    const gameObjects = [];
+    const objectTypes = {
+        player: 0,
+        asteroid: 1,
+        laser: 2
+    };
+    const gameObjectsObservable = Observable.fromArray(gameObjects);
+    const keyDownEventsObservable = Observable.fromEvent(document, 'keydown');
+    const keyUpEventsObservable = Observable.fromEvent(document, 'keyup');
+    const createEllipse = (parentElement, xCenter, yCenter, xRadius, yRadius) => {
+        return new Elem(parentElement, 'ellipse')
+            .attr("cx", xCenter)
+            .attr("cy", yCenter)
+            .attr("rx", xRadius)
+            .attr("ry", yRadius)
+            .attr("style", "fill:brown");
+    };
+    const createPolygon = (parentElement, pointsList) => {
+        return new Elem(parentElement, 'polygon')
+            .attr("points", pointsList.join(" "))
+            .attr("style", "fill:lime;stroke:purple;stroke-width:1");
+    };
     const svg = document.getElementById("canvas");
     const shippyBoy = new Ship(svg, 300, 300);
     const astyBoy = new Asteroid(svg);
-    keyDownEvents.map((event) => {
+    gameObjects.push(shippyBoy);
+    gameObjects.push(astyBoy);
+    keyDownEventsObservable.map((event) => {
         return event.key;
     }).subscribe((keyCode) => {
         if (keyCode == "ArrowRight") {
@@ -169,7 +173,7 @@ function asteroids() {
             shippyBoy.setKeyDown("forward");
         }
     });
-    keyUpEvents.map((event) => {
+    keyUpEventsObservable.map((event) => {
         return event.key;
     }).subscribe((keyCode) => {
         if (keyCode == "ArrowRight") {
@@ -183,8 +187,13 @@ function asteroids() {
         }
     });
     gameLoop.subscribe((frame) => {
-        shippyBoy.update();
-        astyBoy.update();
+        gameObjects.forEach((gameObject) => {
+            gameObject.update();
+            gameObjectsObservable.map((gameObject) => {
+                return gameObject;
+            }).subscribe((gameObject) => {
+            });
+        });
     });
 }
 if (typeof window != 'undefined')
