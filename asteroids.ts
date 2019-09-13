@@ -42,8 +42,17 @@ function asteroids() {
       this.basicEntity.elem.remove();
       // overwrite the whole gameObjects array to avoid mutating
       gameObjects = gameObjects.filter((gameObject) => {
+        if (gameObject === this) {
+        }
         return gameObject !== this;
-      });
+      })
+      lasers = lasers.filter((gameObject) => {
+        if (gameObject === this) {
+        }
+        return gameObject !== this;
+      })
+      gameObjectsObservable = updateObservableFromArray(gameObjects);
+      lasersObservable = updateObservableFromArray(lasers);
     };
 
     setEntity(entity: Elem) {
@@ -271,27 +280,28 @@ function asteroids() {
     updateSVGMovementAttributes(): void {
       this.basicEntity.attr("cx", this.x);
       this.basicEntity.attr("cy", this.y);
-    }    
+    };    
     move(): void {
       this.x += this.speed * this.xDirection;
       this.y += -1 * this.speed * this.yDirection;
       this.updateSVGMovementAttributes();
       if (this.x < 0 || this.y < 0 || this.x > 600 || this.y > 600) {
         this.destroy();
-      }
-    }
+      };
+    };
     update(): void {
       this.move();
-    }
+    };
     setEntityHeight(): void {
       this.height = 5;
-    }
+    };
     setEntityWidth(): void {
       this.width = 5;
-    }
+    };
   }
 
   const gameLoop = Observable.interval(16.7);
+  let shippyBoy: Ship;
   let gameObjects: Array<BasicEntity> = [];
   let lasers: Array<BasicEntity> = [];
   const objectTypes = {
@@ -299,9 +309,9 @@ function asteroids() {
     asteroid: 1,
     laser: 2
   };
-  
-  const lasersObservable = Observable.fromArray<BasicEntity>(lasers);
-  const gameObjectsObservable = Observable.fromArray<BasicEntity>(gameObjects);
+  let score = 0;
+  let lasersObservable = Observable.fromArray<BasicEntity>(lasers);
+  let gameObjectsObservable = Observable.fromArray<BasicEntity>(gameObjects);
   const keyDownEventsObservable = Observable.fromEvent<KeyboardEvent>(document, 'keydown');
   const keyUpEventsObservable = Observable.fromEvent<KeyboardEvent>(document, 'keyup');
 
@@ -313,6 +323,7 @@ function asteroids() {
       .attr("ry", yRadius)
       .attr("style", "fill:" + color);
   };
+
   const createPolygon = (parentElement:HTMLElement, pointsList: Array<string>): Elem => {
     return new Elem(parentElement, 'polygon') 
       .attr("points",pointsList.join(" "))
@@ -329,16 +340,85 @@ function asteroids() {
       } else {
         return false;
       }
+  };
+
+  const updateObservableFromArray = <T>(observable: Array<T>): Observable<T> => {
+    return Observable.fromArray<T>(observable);
+  };
+
+  const spawnAsteroid = () => {
+    let radius = Math.floor((Math.random() * 50));
+    if (radius < 10) {
+      radius += 5;
+    }
+    gameObjects.push(new Asteroid(svg, radius));
+  }
+
+  const resetScore = () => {
+    score = 0;
+  }
+
+  const incrementScore = () => {
+    score += 1;
+    updateScoreUI();
+  }
+
+  const endGame = () => {
+    // set visibility of ui elements
+    if (gameOverElement && scoreHeader) {
+      setVisibility(gameOverElement, true);
+      setVisibility(scoreHeader, false);
+    };
+  };
+
+  const setVisibility = (ele: HTMLElement, visible: boolean) => {
+    visible === true? ele.style.visibility = "visible": ele.style.visibility = "hidden"; 
+  }
+
+  const updateScoreUI = () => {
+    if (scoreElement) {
+      scoreElement.innerText = score.toString();
+    }; 
+  }
+
+  const reset = () => {
+    // remove all existing game objects
+    gameObjects.forEach((gameObject) => {
+      gameObject.basicEntity.elem.remove();
+    })
+    gameObjects = [];
+    lasers = [];
+    resetScore();
+    updateScoreUI();
+    // reset observables
+    gameObjectsObservable = updateObservableFromArray(gameObjects);
+    lasersObservable = updateObservableFromArray(lasers);
+    // change ui to reflect new game
+    if (gameOverElement && scoreHeader) {
+      setVisibility(gameOverElement, false);
+      setVisibility(scoreHeader, true);
+    };
+    // spawn new ship
+    shippyBoy = new Ship(svg, 300, 300);
+    gameObjects.push(shippyBoy);
+    spawnAsteroid();
   }
 
   // setup game
   const svg = document.getElementById("canvas")!;
-
-  const shippyBoy = new Ship(svg, 300, 300);
-  const astyBoy = new Asteroid(svg, 20);
-
+  const scoreElement = document.getElementById("score");
+  const scoreHeader = document.getElementById("scoreHeader");
+  const gameOverElement = document.getElementById("gameOver");
+  const retryButton = document.getElementById("retryButton");
+  shippyBoy = new Ship(svg, 300, 300);
   gameObjects.push(shippyBoy);
-  gameObjects.push(astyBoy);
+  spawnAsteroid();
+
+  if (retryButton) {
+    Observable.fromEvent(retryButton, 'click').subscribe((event) => {
+      reset();
+    });
+  }
 
   keyDownEventsObservable.map((event) => {
     return event.key;
@@ -375,24 +455,28 @@ function asteroids() {
   });
 
   gameLoop.subscribe((frame: number) => {
-    gameObjects.forEach((gameObject) => {
-      gameObject.update();
-      gameObjectsObservable.map((gameObject) => {
-        return gameObject;
-      }).subscribe((gameObject) => {
+    gameObjectsObservable
+      .forEach((gameObject) => {
+        gameObject.update();
+      })
+      .subscribe((gameObject) => {
         if (gameObject.objectType === objectTypes.asteroid) {
           if (collision(shippyBoy, gameObject)) {
             shippyBoy.destroy();
+            gameObject.destroy();
+            endGame();
           }
-          lasersObservable.map((laser) => {
-            if (collision(laser, gameObject)) {
-              laser.destroy();
-              gameObject.destroy();
-            }
-          }).subscribe(() => {});
+          lasers
+            .forEach((laser) => {
+              if (collision(laser, gameObject)) {
+                laser.destroy();
+                gameObject.destroy();
+                incrementScore();
+                spawnAsteroid();
+              }
+            })
         }
       })
-    });
   });
 
 }

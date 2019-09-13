@@ -11,8 +11,17 @@ function asteroids() {
         destroy() {
             this.basicEntity.elem.remove();
             gameObjects = gameObjects.filter((gameObject) => {
+                if (gameObject === this) {
+                }
                 return gameObject !== this;
             });
+            lasers = lasers.filter((gameObject) => {
+                if (gameObject === this) {
+                }
+                return gameObject !== this;
+            });
+            gameObjectsObservable = updateObservableFromArray(gameObjects);
+            lasersObservable = updateObservableFromArray(lasers);
         }
         ;
         setEntity(entity) {
@@ -208,6 +217,7 @@ function asteroids() {
             this.basicEntity.attr("cx", this.x);
             this.basicEntity.attr("cy", this.y);
         }
+        ;
         move() {
             this.x += this.speed * this.xDirection;
             this.y += -1 * this.speed * this.yDirection;
@@ -215,18 +225,24 @@ function asteroids() {
             if (this.x < 0 || this.y < 0 || this.x > 600 || this.y > 600) {
                 this.destroy();
             }
+            ;
         }
+        ;
         update() {
             this.move();
         }
+        ;
         setEntityHeight() {
             this.height = 5;
         }
+        ;
         setEntityWidth() {
             this.width = 5;
         }
+        ;
     }
     const gameLoop = Observable.interval(16.7);
+    let shippyBoy;
     let gameObjects = [];
     let lasers = [];
     const objectTypes = {
@@ -234,8 +250,9 @@ function asteroids() {
         asteroid: 1,
         laser: 2
     };
-    const lasersObservable = Observable.fromArray(lasers);
-    const gameObjectsObservable = Observable.fromArray(gameObjects);
+    let score = 0;
+    let lasersObservable = Observable.fromArray(lasers);
+    let gameObjectsObservable = Observable.fromArray(gameObjects);
     const keyDownEventsObservable = Observable.fromEvent(document, 'keydown');
     const keyUpEventsObservable = Observable.fromEvent(document, 'keyup');
     const createEllipse = (parentElement, xCenter, yCenter, xRadius, yRadius, color) => {
@@ -262,11 +279,71 @@ function asteroids() {
             return false;
         }
     };
+    const updateObservableFromArray = (observable) => {
+        return Observable.fromArray(observable);
+    };
+    const spawnAsteroid = () => {
+        let radius = Math.floor((Math.random() * 50));
+        if (radius < 10) {
+            radius += 5;
+        }
+        gameObjects.push(new Asteroid(svg, radius));
+    };
+    const resetScore = () => {
+        score = 0;
+    };
+    const incrementScore = () => {
+        score += 1;
+        updateScoreUI();
+    };
+    const endGame = () => {
+        if (gameOverElement && scoreHeader) {
+            setVisibility(gameOverElement, true);
+            setVisibility(scoreHeader, false);
+        }
+        ;
+    };
+    const setVisibility = (ele, visible) => {
+        visible === true ? ele.style.visibility = "visible" : ele.style.visibility = "hidden";
+    };
+    const updateScoreUI = () => {
+        if (scoreElement) {
+            scoreElement.innerText = score.toString();
+        }
+        ;
+    };
+    const reset = () => {
+        gameObjects.forEach((gameObject) => {
+            gameObject.basicEntity.elem.remove();
+        });
+        gameObjects = [];
+        lasers = [];
+        resetScore();
+        updateScoreUI();
+        gameObjectsObservable = updateObservableFromArray(gameObjects);
+        lasersObservable = updateObservableFromArray(lasers);
+        if (gameOverElement && scoreHeader) {
+            setVisibility(gameOverElement, false);
+            setVisibility(scoreHeader, true);
+        }
+        ;
+        shippyBoy = new Ship(svg, 300, 300);
+        gameObjects.push(shippyBoy);
+        spawnAsteroid();
+    };
     const svg = document.getElementById("canvas");
-    const shippyBoy = new Ship(svg, 300, 300);
-    const astyBoy = new Asteroid(svg, 20);
+    const scoreElement = document.getElementById("score");
+    const scoreHeader = document.getElementById("scoreHeader");
+    const gameOverElement = document.getElementById("gameOver");
+    const retryButton = document.getElementById("retryButton");
+    shippyBoy = new Ship(svg, 300, 300);
     gameObjects.push(shippyBoy);
-    gameObjects.push(astyBoy);
+    spawnAsteroid();
+    if (retryButton) {
+        Observable.fromEvent(retryButton, 'click').subscribe((event) => {
+            reset();
+        });
+    }
     keyDownEventsObservable.map((event) => {
         return event.key;
     }).subscribe((keyCode) => {
@@ -300,23 +377,27 @@ function asteroids() {
         }
     });
     gameLoop.subscribe((frame) => {
-        gameObjects.forEach((gameObject) => {
+        gameObjectsObservable
+            .forEach((gameObject) => {
             gameObject.update();
-            gameObjectsObservable.map((gameObject) => {
-                return gameObject;
-            }).subscribe((gameObject) => {
-                if (gameObject.objectType === objectTypes.asteroid) {
-                    if (collision(shippyBoy, gameObject)) {
-                        shippyBoy.destroy();
-                    }
-                    lasersObservable.map((laser) => {
-                        if (collision(laser, gameObject)) {
-                            laser.destroy();
-                            gameObject.destroy();
-                        }
-                    }).subscribe(() => { });
+        })
+            .subscribe((gameObject) => {
+            if (gameObject.objectType === objectTypes.asteroid) {
+                if (collision(shippyBoy, gameObject)) {
+                    shippyBoy.destroy();
+                    gameObject.destroy();
+                    endGame();
                 }
-            });
+                lasers
+                    .forEach((laser) => {
+                    if (collision(laser, gameObject)) {
+                        laser.destroy();
+                        gameObject.destroy();
+                        incrementScore();
+                        spawnAsteroid();
+                    }
+                });
+            }
         });
     });
 }

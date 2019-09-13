@@ -13,8 +13,14 @@
         <script src="observable.js"></script>
         <script src="asteroids.js"></script>
     </head>
-    <body>
-        <h1>Asteroids</h1>
-        <svg id="canvas" width="600" height="600"/>
+    <body style="box-sizing: border-box;">
+        <div>
+            <h1 style="display: inline">Asteroids</h1>
+            <h4 style="display: inline" id="scoreHeader">Score: <span id="score">0</span></h4>
+            <h4 style="display: inline; visibility: hidden;" id="gameOver">GAME OVER <button id="retryButton">Retry</button></h4>
+        </div>
+        <div>
+            <svg id="canvas" width="600" height="600"/>
+        </div>
     </body>
 </html>
